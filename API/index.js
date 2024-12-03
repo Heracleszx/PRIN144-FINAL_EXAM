@@ -1,4 +1,5 @@
 const express = require('express');
+const Employee = require('../models/employee');
 const bodyParser = require('body-parser');
 const { Sequelize, DataTypes } = require('sequelize');
 const swaggerJsDoc = require('swagger-jsdoc');
@@ -33,113 +34,74 @@ const sequelize = new Sequelize('postgres://user:password@localhost:5432/your_da
   logging: false, 
 });
 
-// Define Employee model
-const Employee = sequelize.define('Employee', {
-  first_name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  last_name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  position: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  department: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  is_working_from_home: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-  },
-});
-
-sequelize.sync()
-  .then(() => console.log('Database synchronized'))
-  .catch((error) => console.error('Error syncing database:', error));
-
-// Routes for CRUD operations
-
-// 1. Get all employees
-app.get('/employees', async (req, res) => {
+// GET all employees
+router.get('/employees', async (req, res) => {
   try {
     const employees = await Employee.findAll();
     res.status(200).json(employees);
   } catch (error) {
-    res.status(500).json({ error: 'Unable to fetch employees' });
+    res.status(500).json({ error: 'Failed to retrieve employees' });
   }
 });
 
-// 2. Get a specific employee by ID
-app.get('/employees/:id', async (req, res) => {
-  const { id } = req.params;
+// GET employee by ID
+router.get('/employees/:id', async (req, res) => {
   try {
-    const employee = await Employee.findByPk(id);
+    const employee = await Employee.findByPk(req.params.id);
     if (!employee) {
       return res.status(404).json({ error: 'Employee not found' });
     }
     res.status(200).json(employee);
   } catch (error) {
-    res.status(500).json({ error: 'Unable to fetch employee' });
+    res.status(500).json({ error: 'Failed to retrieve employee' });
   }
 });
 
-// 3. Create a new employee
-app.post('/employees', async (req, res) => {
+// POST create a new employee
+router.post('/employees', async (req, res) => {
   const { first_name, last_name, position, department, is_working_from_home } = req.body;
+
   try {
-    const newEmployee = await Employee.create({
-      first_name,
-      last_name,
-      position,
-      department,
-      is_working_from_home,
-    });
+    const newEmployee = await Employee.create({ first_name, last_name, position, department, is_working_from_home });
     res.status(201).json({ id: newEmployee.id });
   } catch (error) {
-    res.status(500).json({ error: 'Unable to create employee' });
+    res.status(400).json({ error: 'Failed to create employee' });
   }
 });
 
-// 4. Update an existing employee
-app.put('/employees/:id', async (req, res) => {
-  const { id } = req.params;
+// PUT update an employee
+router.put('/employees/:id', async (req, res) => {
   const { first_name, last_name, position, department, is_working_from_home } = req.body;
+  
   try {
-    const employee = await Employee.findByPk(id);
+    const employee = await Employee.findByPk(req.params.id);
     if (!employee) {
       return res.status(404).json({ error: 'Employee not found' });
     }
-    await employee.update({
-      first_name,
-      last_name,
-      position,
-      department,
-      is_working_from_home,
-    });
+
+    await employee.update({ first_name, last_name, position, department, is_working_from_home });
     res.status(200).json(employee);
   } catch (error) {
-    res.status(500).json({ error: 'Unable to update employee' });
+    res.status(400).json({ error: 'Failed to update employee' });
   }
 });
 
-// 5. Delete an employee by ID
-app.delete('/employees/:id', async (req, res) => {
-  const { id } = req.params;
+// DELETE employee
+router.delete('/employees/:id', async (req, res) => {
   try {
-    const employee = await Employee.findByPk(id);
+    const employee = await Employee.findByPk(req.params.id);
     if (!employee) {
       return res.status(404).json({ error: 'Employee not found' });
     }
+
     await employee.destroy();
-    res.status(204).send(); // No content status code
+    res.status(204).send();
   } catch (error) {
-    res.status(500).json({ error: 'Unable to delete employee' });
+    res.status(500).json({ error: 'Failed to delete employee' });
   }
 });
+
+module.exports = router;
 
 // Index page to show "PRIN144-Final-Exam: Your Name"
 app.get('/', (req, res) => {
