@@ -2,16 +2,16 @@ const express = require('express');
 const { Sequelize, DataTypes } = require('sequelize');
 const app = express();
 
-// Middleware
+
 app.use(express.json());
 
-// Set up Sequelize for PostgreSQL
+
 const sequelize = new Sequelize('employee_tracker', 'your_username', 'your_password', {
   host: 'localhost',
   dialect: 'postgres',
 });
 
-// Define the Employee model
+
 const Employee = sequelize.define('Employee', {
   first_name: {
     type: DataTypes.STRING,
