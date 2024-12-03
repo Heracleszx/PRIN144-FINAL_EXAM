@@ -1,111 +1,129 @@
 const express = require('express');
-const Employee = require('../models/employee');
-const bodyParser = require('body-parser');
 const { Sequelize, DataTypes } = require('sequelize');
-const swaggerJsDoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
-
-
 const app = express();
-const PORT = 3000;
 
-app.use(express.json()); 
+// Middleware
+app.use(express.json());
 
-const swaggerOptions = {
-  swaggerDefinition: {
-    info: {
-      title: 'Employee Tracker API',
-      description: 'API documentation for Employee Tracker System',
-      version: '1.0.0',
-    },
-  },
-  apis: ['./routes/*.js'], 
-};
-
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
-
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-
-const sequelize = new Sequelize('postgres://user:password@localhost:5432/your_database_name', {
+// Set up Sequelize for PostgreSQL
+const sequelize = new Sequelize('employee_tracker', 'your_username', 'your_password', {
+  host: 'localhost',
   dialect: 'postgres',
-  logging: false, 
 });
 
-// GET all employees
-router.get('/employees', async (req, res) => {
+// Define the Employee model
+const Employee = sequelize.define('Employee', {
+  first_name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  last_name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  position: {
+    type: DataTypes.STRING,
+  },
+  department: {
+    type: DataTypes.STRING,
+  },
+  is_working_from_home: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+  },
+});
+
+// Create Employee
+async function createEmployee(req, res) {
+  try {
+    const { first_name, last_name, position, department, is_working_from_home } = req.body;
+    const newEmployee = await Employee.create({
+      first_name,
+      last_name,
+      position,
+      department,
+      is_working_from_home,
+    });
+    res.status(201).json({ id: newEmployee.id });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+// Get All Employees
+async function getAllEmployees(req, res) {
   try {
     const employees = await Employee.findAll();
     res.status(200).json(employees);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve employees' });
+    res.status(500).json({ message: error.message });
   }
-});
+}
 
-// GET employee by ID
-router.get('/employees/:id', async (req, res) => {
+// Get Employee by ID
+async function getEmployeeById(req, res) {
   try {
     const employee = await Employee.findByPk(req.params.id);
     if (!employee) {
-      return res.status(404).json({ error: 'Employee not found' });
+      return res.status(404).json({ message: 'Employee not found' });
     }
     res.status(200).json(employee);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve employee' });
+    res.status(500).json({ message: error.message });
   }
-});
+}
 
-// POST create a new employee
-router.post('/employees', async (req, res) => {
-  const { first_name, last_name, position, department, is_working_from_home } = req.body;
-
-  try {
-    const newEmployee = await Employee.create({ first_name, last_name, position, department, is_working_from_home });
-    res.status(201).json({ id: newEmployee.id });
-  } catch (error) {
-    res.status(400).json({ error: 'Failed to create employee' });
-  }
-});
-
-// PUT update an employee
-router.put('/employees/:id', async (req, res) => {
-  const { first_name, last_name, position, department, is_working_from_home } = req.body;
-  
+// Update Employee
+async function updateEmployee(req, res) {
   try {
     const employee = await Employee.findByPk(req.params.id);
     if (!employee) {
-      return res.status(404).json({ error: 'Employee not found' });
+      return res.status(404).json({ message: 'Employee not found' });
     }
 
-    await employee.update({ first_name, last_name, position, department, is_working_from_home });
+    const { first_name, last_name, position, department, is_working_from_home } = req.body;
+    employee.first_name = first_name || employee.first_name;
+    employee.last_name = last_name || employee.last_name;
+    employee.position = position || employee.position;
+    employee.department = department || employee.department;
+    employee.is_working_from_home = is_working_from_home || employee.is_working_from_home;
+
+    await employee.save();
     res.status(200).json(employee);
   } catch (error) {
-    res.status(400).json({ error: 'Failed to update employee' });
+    res.status(500).json({ message: error.message });
   }
-});
+}
 
-// DELETE employee
-router.delete('/employees/:id', async (req, res) => {
+// Delete Employee
+async function deleteEmployee(req, res) {
   try {
     const employee = await Employee.findByPk(req.params.id);
     if (!employee) {
-      return res.status(404).json({ error: 'Employee not found' });
+      return res.status(404).json({ message: 'Employee not found' });
     }
-
     await employee.destroy();
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete employee' });
+    res.status(500).json({ message: error.message });
   }
-});
+}
 
-module.exports = router;
+// Routes
+app.get('/api/employees', getAllEmployees);
+app.get('/api/employees/:id', getEmployeeById);
+app.post('/api/employees', createEmployee);
+app.put('/api/employees/:id', updateEmployee);
+app.delete('/api/employees/:id', deleteEmployee);
 
-
+// Root Route
 app.get('/', (req, res) => {
-  res.send('PRIN144-Final-Exam: Ray Jhon Manalo');
+  res.send('Employee Tracker: Your Name');
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server is listening on port ${PORT}`);
+// Sync Database and Start Server
+sequelize.sync().then(() => {
+  app.listen(3000, () => {
+    console.log('Server running on http://localhost:3000');
+  });
 });
