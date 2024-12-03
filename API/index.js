@@ -5,13 +5,12 @@ const { Sequelize, DataTypes } = require('sequelize');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
-// Initialize express app
+
 const app = express();
 const PORT = 3000;
 
-app.use(express.json()); // Use built-in express JSON parser
+app.use(express.json()); 
 
-// Swagger setup
 const swaggerOptions = {
   swaggerDefinition: {
     info: {
@@ -25,10 +24,8 @@ const swaggerOptions = {
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
-// API docs route
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// Set up Sequelize (PostgreSQL database connection)
 const sequelize = new Sequelize('postgres://user:password@localhost:5432/your_database_name', {
   dialect: 'postgres',
   logging: false, 
@@ -103,9 +100,9 @@ router.delete('/employees/:id', async (req, res) => {
 
 module.exports = router;
 
-// Index page to show "PRIN144-Final-Exam: Your Name"
+
 app.get('/', (req, res) => {
-  res.send('PRIN144-Final-Exam: Your Name'); // Change "Your Name" to your actual name
+  res.send('PRIN144-Final-Exam: Ray Jhon Manalo');
 });
 
 // Start the server
